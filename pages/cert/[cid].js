@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import * as json from "./data.json";
-
+import Confetti from "react-confetti";
+import { useState, useEffect } from "react";
 const infos = json.infos;
 
 export async function getStaticPaths() {
@@ -23,19 +25,55 @@ export async function getStaticProps() {
     },
   };
 }
+function useWindowSize() {
+  // Initialize state with undefined width/height so server and client renders match
+  // Learn more here: https://joshwcomeau.com/react/the-perils-of-rehydration/
+  const [windowSize, setWindowSize] = useState({
+    width: 1920,
+    height: 1080,
+  });
+
+  useEffect(() => {
+    // only execute all the code below in client side
+    if (typeof window !== "undefined") {
+      // Handler to call on window resize
+      function handleResize() {
+        // Set window width/height to state
+        setWindowSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }
+
+      // Add event listener
+      window.addEventListener("resize", handleResize);
+
+      // Call handler right away so state gets updated with initial window size
+      handleResize();
+
+      // Remove event listener on cleanup
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []); // Empty array ensures that effect is only run on mount
+  return windowSize;
+}
 
 const Cert = ({ data }) => {
   console.log(data);
+  const size = useWindowSize();
+
+  console.log(size);
   const router = useRouter();
   const { cid } = router.query;
   const query = data.filter((d) => d.id == cid);
   console.log(query[0]);
   return (
-    <div className="bg-yellow-50">
+    <div className="h-screen bg-yellow-50">
       <Head>
         <title>Mogoj Dholai</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
+      <Confetti width={size.width} height={size.height} />
       <div className="p-8 lg:p-12 xl:p-16">
         <div className="flex flex-col-reverse lg:flex-col">
           <div className="mt-4 space-y-4 lg:flex lg:flex-row lg:items-center lg:justify-between lg:py-6">
@@ -61,13 +99,15 @@ const Cert = ({ data }) => {
                 </svg>
               </div>
               <div className="px-2 text-lg font-medium text-yellow-600">
-                Download
+                <a download="/event.jpg" href="/event.jpg" title="certificate">
+                  Download
+                </a>
               </div>
             </button>
           </div>
           {/* <div className="w-full h-64 mb-12 bg-yellow-300"></div> */}
-          <div className="border-2 border-gray-800" width="200" height="100">
-            <img src="https://i.imgur.com/RKtVD.png" alt="random image" />
+          <div className="grid border-2 border-yellow-500 place-content-center">
+            <Image src="/event.jpg" width={1200} height={600}></Image>
           </div>
         </div>
       </div>
